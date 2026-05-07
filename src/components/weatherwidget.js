@@ -4,15 +4,17 @@ export default function WeatherWidget() {
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [city, setCity] = useState("London");
   const [search, setSearch] = useState("");
+
+  // ✅ API key hardcoded — calls OpenWeatherMap directly
+  const API_KEY = "141d5dd506f64fa5fb475ad319f291e3";
 
   const fetchWeather = async (cityName) => {
     try {
       setLoading(true);
       setError(null);
 
-     const API_KEY = "141d5dd506f64fa5fb475ad319f291e3";
+      // ✅ This calls OpenWeatherMap directly — NOT your backend!
       const res = await fetch(
         `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${API_KEY}&units=metric`
       );
@@ -24,7 +26,6 @@ export default function WeatherWidget() {
 
       const data = await res.json();
       setWeather(data);
-      setCity(cityName);
 
     } catch (err) {
       setError("Failed to fetch weather");
@@ -33,9 +34,8 @@ export default function WeatherWidget() {
     }
   };
 
-  // Fetch weather on load
   useEffect(() => {
-    fetchWeather(city);
+    fetchWeather("London");
   }, []);
 
   const handleSearch = (e) => {
@@ -46,11 +46,9 @@ export default function WeatherWidget() {
     }
   };
 
-  // Weather icon from OpenWeatherMap
   const getIcon = (code) =>
     `https://openweathermap.org/img/wn/${code}@2x.png`;
 
-  // Background based on weather
   const getWeatherBg = (main) => {
     const bgs = {
       Clear:        "linear-gradient(135deg,#f6d365,#fda085)",
@@ -87,7 +85,7 @@ export default function WeatherWidget() {
 
         {loading && (
           <div style={s.center}>
-            <p style={s.loadingText}>Loading weather...</p>
+            <p style={s.loadingText}>⏳ Loading weather...</p>
           </div>
         )}
 
@@ -99,7 +97,6 @@ export default function WeatherWidget() {
 
         {!loading && !error && weather && (
           <>
-            {/* City & Country */}
             <div style={s.location}>
               <span style={s.cityName}>
                 {weather.name}, {weather.sys.country}
@@ -111,7 +108,6 @@ export default function WeatherWidget() {
               </span>
             </div>
 
-            {/* Temperature + Icon */}
             <div style={s.tempRow}>
               <img
                 src={getIcon(weather.weather[0].icon)}
@@ -124,7 +120,6 @@ export default function WeatherWidget() {
               </div>
             </div>
 
-            {/* Details */}
             <div style={s.details}>
               {[
                 { label:"Feels Like", value:`${Math.round(weather.main.feels_like)}°C` },
