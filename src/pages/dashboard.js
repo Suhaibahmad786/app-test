@@ -54,21 +54,21 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
 
-  // ── Real user from backend ──────────────────────────
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
-  // ── Profile edit ────────────────────────────────────
+  // Profile edit
   const [editingProfile, setEditingProfile] = useState(false);
-  const [tempProfile, setTempProfile] = useState({});
+  const [tempProfile, setTempProfile] = useState({ name: "", email: "" });
+  const [savingProfile, setSavingProfile] = useState(false);
 
-  // ── Projects ────────────────────────────────────────
+  // Projects
   const [projects, setProjects] = useState([]);
   const [projectModal, setProjectModal] = useState(false);
   const [editProject, setEditProject] = useState(null);
   const [projectForm, setProjectForm] = useState({ name:"", tech:"", status:"Active", url:"", desc:"" });
 
-  // ── Services ────────────────────────────────────────
+  // Services
   const [services, setServices] = useState([]);
   const [serviceModal, setServiceModal] = useState(false);
   const [editService, setEditService] = useState(null);
@@ -81,49 +81,64 @@ export default function Dashboard() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // ── Fetch real user on load ─────────────────────────
+  // Fetch real user
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const res = await fetch("http://localhost:5000/api/auth/me", {
-          credentials: "include", // ✅ sends cookie automatically
+          credentials: "include",
         });
-
-        if (!res.ok) {
-          // Not logged in → redirect to login
-          navigate("/login");
-          return;
-        }
-
+        if (!res.ok) { navigate("/login"); return; }
         const data = await res.json();
         setUser(data);
-        setTempProfile(data);
+        setTempProfile({ name: data.name, email: data.email });
       } catch (err) {
         navigate("/login");
       } finally {
         setLoadingUser(false);
       }
     };
-
     fetchUser();
   }, [navigate]);
 
-  // ── Get avatar initials from name ───────────────────
   const getInitials = (name) => {
     if (!name) return "?";
     return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
   };
 
-  // ── Logout ──────────────────────────────────────────
+  // Logout
   const handleLogout = async () => {
-    await fetch("http://localhost:5000/api/auth/logout", {
-      method: "POST",
-      credentials: "include",
-    });
+    await fetch("http://localhost:5000/api/auth/logout", { method:"POST", credentials:"include" });
     navigate("/login");
   };
 
-  // ── Project CRUD ────────────────────────────────────
+  // ✅ UPDATE PROFILE — saves to database
+  const handleUpdateProfile = async () => {
+    if (!tempProfile.name || !tempProfile.email) {
+      showToast("Name and email are required", "error");
+      return;
+    }
+    try {
+      setSavingProfile(true);
+      const res = await fetch("http://localhost:5000/api/auth/update-profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name: tempProfile.name, email: tempProfile.email }),
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data || "Update failed", "error"); return; }
+      setUser(data.user);        // ✅ sidebar updates instantly
+      setEditingProfile(false);
+      showToast("Profile updated successfully! ✅");
+    } catch (err) {
+      showToast("Server error", "error");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  // Project CRUD
   const openAddProject = () => { setEditProject(null); setProjectForm({ name:"", tech:"", status:"Active", url:"", desc:"" }); setProjectModal(true); };
   const openEditProject = (p) => { setEditProject(p); setProjectForm({...p}); setProjectModal(true); };
   const saveProject = () => {
@@ -139,7 +154,7 @@ export default function Dashboard() {
   };
   const deleteProject = (id) => { setProjects(projects.filter(p => p.id !== id)); showToast("Project deleted!", "error"); };
 
-  // ── Service CRUD ────────────────────────────────────
+  // Service CRUD
   const openAddService = () => { setEditService(null); setServiceForm({ name:"", price:"", desc:"", icon:"🚀" }); setServiceModal(true); };
   const openEditService = (sv) => { setEditService(sv); setServiceForm({...sv}); setServiceModal(true); };
   const saveService = () => {
@@ -157,7 +172,6 @@ export default function Dashboard() {
 
   const statusColor = { Active:"#22d3ee", Live:"#4ade80", Paused:"#fb923c", Draft:"#a78bfa" };
 
-  // ── Loading screen ──────────────────────────────────
   if (loadingUser) {
     return (
       <div style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"#080a18", color:"#4f8ef7", fontSize:"18px", fontWeight:"700" }}>
@@ -168,14 +182,14 @@ export default function Dashboard() {
 
   return (
     <div style={s.root}>
-      {/* ── SIDEBAR ── */}
+
+      {/* SIDEBAR */}
       <aside style={s.sidebar}>
         <div style={s.logo}>
           <span style={s.logoIcon}>⬡</span>
           <span style={s.logoText}>CoreStack</span>
         </div>
 
-        {/* Real user data shown here */}
         <div style={s.avatarWrap}>
           <div style={s.avatar}>{getInitials(user?.name)}</div>
           <p style={s.sidebarName}>{user?.name || "User"}</p>
@@ -184,13 +198,13 @@ export default function Dashboard() {
 
         <nav style={s.nav}>
           {[
-            { id:"profile", label:"Profile", icon: Icon.user },
+            { id:"profile",  label:"Profile",  icon: Icon.user },
             { id:"projects", label:"Projects", icon: Icon.briefcase },
             { id:"services", label:"Services", icon: Icon.star },
           ].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               style={{ ...s.navBtn, ...(activeTab === tab.id ? s.navBtnActive : {}) }}>
-              <span style={{ opacity: activeTab===tab.id ? 1 : 0.5 }}>{tab.icon}</span>
+              <span style={{ opacity: activeTab === tab.id ? 1 : 0.5 }}>{tab.icon}</span>
               {tab.label}
             </button>
           ))}
@@ -201,17 +215,17 @@ export default function Dashboard() {
         </button>
       </aside>
 
-      {/* ── MAIN CONTENT ── */}
+      {/* MAIN */}
       <main style={s.main}>
         <div style={s.header}>
           <div>
             <h1 style={s.pageTitle}>
-              {activeTab === "profile" && "My Profile"}
+              {activeTab === "profile"  && "My Profile"}
               {activeTab === "projects" && "Projects"}
               {activeTab === "services" && "Services"}
             </h1>
             <p style={s.pageSubtitle}>
-              {activeTab === "profile" && `Welcome back, ${user?.name?.split(" ")[0]}!`}
+              {activeTab === "profile"  && `Welcome back, ${user?.name?.split(" ")[0]}!`}
               {activeTab === "projects" && `${projects.length} projects total`}
               {activeTab === "services" && `${services.length} services offered`}
             </p>
@@ -229,30 +243,84 @@ export default function Dashboard() {
                 <div>
                   <h2 style={s.profileName}>{user?.name}</h2>
                   <p style={s.profileRole}>{user?.email}</p>
+                  <span style={s.profileBadge}>ID: #{user?.id}</span>
                 </div>
               </div>
 
-              <div style={s.infoGrid}>
-                <div style={s.infoItem}>
-                  <span style={s.infoLabel}>Full Name</span>
-                  <span style={s.infoValue}>{user?.name}</span>
+              {/* VIEW MODE */}
+              {!editingProfile && (
+                <>
+                  <div style={s.infoGrid}>
+                    <div style={s.infoItem}>
+                      <span style={s.infoLabel}>Full Name</span>
+                      <span style={s.infoValue}>{user?.name}</span>
+                    </div>
+                    <div style={s.infoItem}>
+                      <span style={s.infoLabel}>Email Address</span>
+                      <span style={s.infoValue}>{user?.email}</span>
+                    </div>
+                    <div style={s.infoItem}>
+                      <span style={s.infoLabel}>User ID</span>
+                      <span style={s.infoValue}>#{user?.id}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setTempProfile({ name: user.name, email: user.email });
+                      setEditingProfile(true);
+                    }}
+                    style={s.editProfileBtn}
+                  >
+                    {Icon.edit} Edit Profile
+                  </button>
+                </>
+              )}
+
+              {/* EDIT MODE */}
+              {editingProfile && (
+                <div style={{ display:"flex", flexDirection:"column", gap:"16px", marginTop:"8px" }}>
+                  <div style={{ height:"1px", background:"#1e2040", margin:"8px 0" }} />
+                  <Field
+                    label="Full Name"
+                    value={tempProfile.name}
+                    onChange={v => setTempProfile({ ...tempProfile, name: v })}
+                    placeholder="John Doe"
+                  />
+                  <Field
+                    label="Email Address"
+                    type="email"
+                    value={tempProfile.email}
+                    onChange={v => setTempProfile({ ...tempProfile, email: v })}
+                    placeholder="you@email.com"
+                  />
+                  <div style={{ display:"flex", gap:"10px", paddingTop:"4px" }}>
+                    <button
+                      onClick={handleUpdateProfile}
+                      style={{ ...s.saveBtn, opacity: savingProfile ? 0.7 : 1 }}
+                      disabled={savingProfile}
+                    >
+                      {Icon.save} {savingProfile ? "Saving..." : "Save Changes"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingProfile(false);
+                        setTempProfile({ name: user.name, email: user.email });
+                      }}
+                      style={s.cancelBtn}
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-                <div style={s.infoItem}>
-                  <span style={s.infoLabel}>Email</span>
-                  <span style={s.infoValue}>{user?.email}</span>
-                </div>
-                <div style={s.infoItem}>
-                  <span style={s.infoLabel}>User ID</span>
-                  <span style={s.infoValue}>#{user?.id}</span>
-                </div>
-              </div>
+              )}
             </div>
 
+            {/* Stats */}
             <div style={s.statsRow}>
               {[
                 { label:"Projects", value: projects.length, color:"#4f8ef7" },
                 { label:"Services", value: services.length, color:"#a78bfa" },
-                { label:"Active", value: projects.filter(p=>p.status==="Active"||p.status==="Live").length, color:"#4ade80" },
+                { label:"Active", value: projects.filter(p => p.status==="Active"||p.status==="Live").length, color:"#4ade80" },
               ].map(stat => (
                 <div key={stat.label} style={{ ...s.statCard, borderTop:`3px solid ${stat.color}` }}>
                   <p style={{ ...s.statNum, color: stat.color }}>{stat.value}</p>
@@ -307,7 +375,7 @@ export default function Dashboard() {
         )}
       </main>
 
-      {/* ── PROJECT MODAL ── */}
+      {/* PROJECT MODAL */}
       {projectModal && (
         <Modal title={editProject ? "Edit Project" : "Add Project"} onClose={() => setProjectModal(false)}>
           <div style={{ padding:"24px", display:"flex", flexDirection:"column", gap:"16px" }}>
@@ -329,7 +397,7 @@ export default function Dashboard() {
         </Modal>
       )}
 
-      {/* ── SERVICE MODAL ── */}
+      {/* SERVICE MODAL */}
       {serviceModal && (
         <Modal title={editService ? "Edit Service" : "Add Service"} onClose={() => setServiceModal(false)}>
           <div style={{ padding:"24px", display:"flex", flexDirection:"column", gap:"16px" }}>
@@ -345,8 +413,9 @@ export default function Dashboard() {
         </Modal>
       )}
 
+      {/* TOAST */}
       {toast && (
-        <div style={{ ...s.toast, background: toast.type==="error" ? "#f87171" : "#4ade80" }}>
+        <div style={{ ...s.toast, background: toast.type === "error" ? "#f87171" : "#4ade80" }}>
           {toast.msg}
         </div>
       )}
@@ -379,10 +448,12 @@ const s = {
   profileAvatar: { width:"80px", height:"80px", minWidth:"80px", borderRadius:"50%", background:"linear-gradient(135deg,#4f8ef7,#a78bfa)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"28px", fontWeight:"800", color:"#fff" },
   profileName: { margin:"0 0 4px 0", fontSize:"22px", fontWeight:"800", color:"#e8eaf6" },
   profileRole: { margin:"0 0 8px 0", fontSize:"14px", color:"#4f8ef7", fontWeight:"600" },
+  profileBadge: { display:"inline-block", padding:"3px 10px", borderRadius:"20px", background:"#1e2040", color:"#6b7db3", fontSize:"12px", fontWeight:"600" },
   infoGrid: { display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:"16px", marginBottom:"20px" },
   infoItem: { display:"flex", flexDirection:"column", gap:"4px" },
   infoLabel: { fontSize:"11px", fontWeight:"600", color:"#6b7db3", textTransform:"uppercase", letterSpacing:"0.06em" },
   infoValue: { fontSize:"14px", color:"#e8eaf6" },
+  editProfileBtn: { display:"inline-flex", alignItems:"center", gap:"8px", padding:"10px 20px", borderRadius:"10px", border:"1px solid #2a2d4a", background:"transparent", color:"#4f8ef7", fontSize:"14px", fontWeight:"600", cursor:"pointer" },
   statsRow: { display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"16px" },
   statCard: { background:"#0d0f1f", border:"1px solid #1e2040", borderRadius:"12px", padding:"20px", textAlign:"center" },
   statNum: { margin:"0 0 4px 0", fontSize:"32px", fontWeight:"800" },

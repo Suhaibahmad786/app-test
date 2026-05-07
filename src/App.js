@@ -3,6 +3,8 @@ import Home from "./pages/home";
 import Signup from "./pages/signup";
 import Login from "./pages/signin";
 import Dashboard from "./pages/dashboard";
+import Contact from "./pages/contact"; 
+import Price from "./pages/price";
 
 function App() {
   return (
@@ -12,6 +14,8 @@ function App() {
           <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/contact" element={<Contact />} />
+               <Route path="/price" element={<Price />} />
       </Routes>
 
     </BrowserRouter>
