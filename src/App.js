@@ -5,6 +5,8 @@ import Login from "./pages/signin";
 import Dashboard from "./pages/dashboard";
 import Contact from "./pages/contact"; 
 import Price from "./pages/price";
+import Weather from "./pages/weather";
+import Courses from "./pages/courses";
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/contact" element={<Contact />} />
                <Route path="/price" element={<Price />} />
+               <Route path="/weather" element={<Weather />} />
+                <Route path="/courses" element={<Courses />} />
       </Routes>
 
     </BrowserRouter>

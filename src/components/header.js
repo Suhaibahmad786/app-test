@@ -7,6 +7,8 @@ import { Link } from 'react-router-dom';
         <div style={styles.navLinks}>
           <Link to="/" style={styles.navLink}>Home</Link>
           <Link to="/contact" style={styles.navLink}>Contact Us</Link>
+             <Link to="/courses" style={styles.navLink}>Courses</Link>
+           <Link to="/weather" style={styles.navLink}>Weather</Link>
           <Link to="/price" style={styles.navLink}>Price</Link>
           <Link to="/login">
             <button style={styles.navLoginBtn}>Sign In</button>
