@@ -7,27 +7,19 @@ const Weather = () => {
   const [error, setError] = useState("");
 
   // FETCH WEATHER
-const getWeather = async (lat, lon) => {
-  try {
-    setLoading(true);
-    setError(null);
+  const getWeather = async (lat, lon) => {
+    try {
+      const res = await axios.get(
+        `http://localhost:5000/api/weather?lat=${lat}&lon=${lon}`
+      );
 
-    const res = await axios.get(
-      `https://app-backend-production-89a2.up.railway.app/api/weather`,
-      {
-        params: { lat, lon }
-      }
-    );
-
-    setData(res.data);
-  } catch (err) {
-    console.log("Weather error:", err.message);
-
-    setError("Failed to load weather");
-  } finally {
-    setLoading(false);
-  }
-};
+      setData(res.data);
+      setLoading(false);
+    } catch (err) {
+      setError("Failed to load weather");
+      setLoading(false);
+    }
+  };
 
   // GET LOCATION
   useEffect(() => {
