@@ -12,7 +12,7 @@ export default function WeatherWidget() {
       setLoading(true);
       setError(null);
 
-      const API_KEY = process.env.REACT_APP_WEATHER_KEY;
+     const API_KEY = "141d5dd506f64fa5fb475ad319f291e3";
       const res = await fetch(
         `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${API_KEY}&units=metric`
       );
